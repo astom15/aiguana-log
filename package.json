@@ -1,0 +1,18 @@
+{
+	"name": "aiguana-log",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"build:api": "pnpm --filter api build",
+		"build:web": "pnpm --filter web build",
+		"build": "pnpm build:api && pnpm build:web",
+		"dev:api": "pnpm --filter api dev",
+		"dev:web": "pnpm --filter web dev",
+		"dev": "concurrently \"pnpm:dev:api\" \"pnpm:dev:web\"",
+		"start:api": "pnpm --filter api start",
+		"start:web": "pnpm --filter web start"
+	},
+	"devDependencies": {
+		"concurrently": "^9.1.2"
+	}
+}
