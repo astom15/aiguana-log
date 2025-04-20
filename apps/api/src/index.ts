@@ -72,8 +72,6 @@ const start = async () => {
 
 start();
 
-// Define Fastify interface augmentation for type safety (optional but recommended)
-// Create a file like src/types/fastify.d.ts if you prefer
 declare module "fastify" {
 	interface FastifyInstance {
 		config: {

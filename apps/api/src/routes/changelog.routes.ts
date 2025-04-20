@@ -4,12 +4,14 @@ import {
 	FastifyRequest,
 	FastifyReply,
 } from "fastify";
+import { z } from "zod";
 import { ChangelogEntry, TriggerType } from "../types/changelog.types";
 import {
 	GenerateChangelogBody,
 	generateChangelogBodySchema,
+	changelogResponseSchema,
+	changelogListResponseSchema,
 } from "../schemas/changelog.schemas";
-import { jsonSchemaTransform } from "fastify-type-provider-zod";
 /**
  * @param fastify - The Fastify instance.
  * @param options - Plugin options.
@@ -21,34 +23,55 @@ export default async function changelogRoutes(
 	const changelogsCollection =
 		fastify.mongo.db.collection<ChangelogEntry>("changelogs");
 
-	fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
-		try {
-			const entries = await changelogsCollection
-				.find(
-					{ status: "published" },
-					{
-						sort: { publishedAt: -1 },
-						limit: 10,
-						// Optionally add projection to exclude fields not needed for the list view
-						// projection: { description: 0, commitShas: 0, ... }
-					}
-				)
-				.toArray();
+	fastify.get(
+		"/",
+		{
+			schema: {
+				response: {
+					200: changelogListResponseSchema,
+					500: z.object({
+						message: z.string(),
+					}),
+				},
+			},
+		},
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			try {
+				const entries = await changelogsCollection
+					.find(
+						{ status: "published" },
+						{
+							sort: { publishedAt: -1 },
+							limit: 10,
+							// Optionally add projection to exclude fields not needed for the list view
+							// projection: { description: 0, commitShas: 0, ... }
+						}
+					)
+					.toArray();
 
-			reply.send(entries);
-		} catch (error) {
-			fastify.log.error(
-				error,
-				"Failed to retrieve published changelog entries"
-			);
-			reply.code(500).send({ message: "Failed to retrieve changelog entries" });
+				reply.send(entries);
+			} catch (error) {
+				fastify.log.error(
+					error,
+					"Failed to retrieve published changelog entries"
+				);
+				reply
+					.code(500)
+					.send({ message: "Failed to retrieve changelog entries" });
+			}
 		}
-	});
+	);
 	fastify.post(
 		"/generate",
 		{
 			schema: {
 				body: generateChangelogBodySchema,
+				response: {
+					201: changelogResponseSchema,
+					500: z.object({
+						message: z.string(),
+					}),
+				},
 			},
 		},
 		async (
