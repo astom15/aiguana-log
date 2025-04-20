@@ -1,10 +1,16 @@
 import fastify from "fastify";
 import cors from "@fastify/cors";
 import fastifyEnv from "@fastify/env";
-import mongoDbPlugin from "./mongodb";
+import {
+	serializerCompiler,
+	validatorCompiler,
+	ZodTypeProvider,
+} from "fastify-type-provider-zod";
+import mongoDbPlugin from "./plugins/mongodb";
+import changelogRoutes from "./routes/changelog.routes";
 const schema = {
 	type: "object",
-	required: ["PORT", "CORS_ORIGIN"],
+	required: ["PORT", "CORS_ORIGIN", "MONGODB_URI", "MONGODB_DB_NAME"],
 	properties: {
 		NODE_ENV: { type: "string", default: "development" },
 		PORT: { type: "number", default: 3001 },
@@ -14,7 +20,6 @@ const schema = {
 	},
 };
 
-// Options for fastify-env
 const options = {
 	confKey: "config",
 	schema: schema,
@@ -24,7 +29,10 @@ const options = {
 };
 
 const buildServer = async () => {
-	const server = fastify({ logger: true });
+	const server = fastify({ logger: true }).withTypeProvider<ZodTypeProvider>();
+	server.setValidatorCompiler(validatorCompiler);
+	server.setSerializerCompiler(serializerCompiler);
+
 	await server.register(fastifyEnv, options);
 	const corsOrigin = server.config.CORS_ORIGIN;
 
@@ -33,7 +41,7 @@ const buildServer = async () => {
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	});
 	await server.register(mongoDbPlugin);
-
+	await server.register(changelogRoutes, { prefix: "/api/changelogs" });
 	server.get("/ping", async (request, reply) => {
 		server.log.info(`Ping received. NODE_ENV=${server.config.NODE_ENV}`);
 		if (server.mongo) {

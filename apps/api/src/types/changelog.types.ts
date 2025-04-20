@@ -16,3 +16,9 @@ export interface ChangelogEntry {
 	breaking_change?: boolean;
 	aiModelUsed?: string;
 }
+
+export enum TriggerType {
+	PUSH = "push",
+	PULL_REQUEST = "pull_request",
+	MANUAL = "manual",
+}
