@@ -6,18 +6,26 @@ import {
 	validatorCompiler,
 	ZodTypeProvider,
 } from "fastify-type-provider-zod";
-import mongoDbPlugin from "./plugins/mongodb";
+import mongoDbPlugin from "./plugins/mongodb.plugin";
 import changelogRoutes from "./routes/changelog.routes";
+import openaiPlugin from "./plugins/openai.plugin";
 
 const schema = {
 	type: "object",
-	required: ["PORT", "CORS_ORIGIN", "MONGODB_URI", "MONGODB_DB_NAME"],
+	required: [
+		"PORT",
+		"CORS_ORIGIN",
+		"MONGODB_URI",
+		"MONGODB_DB_NAME",
+		"OPENAI_API_KEY",
+	],
 	properties: {
 		NODE_ENV: { type: "string", default: "development" },
 		PORT: { type: "number", default: 3001 },
 		CORS_ORIGIN: { type: "string" },
 		MONGODB_URI: { type: "string" },
 		MONGODB_DB_NAME: { type: "string" },
+		OPENAI_API_KEY: { type: "string" },
 	},
 };
 
@@ -42,6 +50,7 @@ const buildServer = async () => {
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	});
 	await server.register(mongoDbPlugin);
+	await server.register(openaiPlugin);
 	await server.register(changelogRoutes, { prefix: "/api/changelogs" });
 
 	return server;
@@ -72,6 +81,7 @@ declare module "fastify" {
 			CORS_ORIGIN: string;
 			MONGODB_URI: string;
 			MONGODB_DB_NAME: string;
+			OPENAI_API_KEY: string;
 		};
 	}
 }

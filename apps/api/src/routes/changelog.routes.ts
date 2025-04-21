@@ -5,14 +5,18 @@ import {
 	FastifyReply,
 } from "fastify";
 import { z } from "zod";
-
 import {
 	GenerateChangelogBody,
 	generateChangelogBodySchema,
 	changelogResponseSchema,
 	changelogListResponseSchema,
+	GetIdParams,
+	getIdParamsSchema,
 } from "../schemas/changelog.schemas";
 import { ChangelogEntry, Status } from "../../../shared-types/src";
+import { ObjectId } from "mongodb";
+import { generateChangelog } from "../services/openai.service";
+
 /**
  * @param fastify - The Fastify instance.
  * @param options - Plugin options.
@@ -49,7 +53,6 @@ export default async function changelogRoutes(
 						}
 					)
 					.toArray();
-				console.log(entries);
 				reply.code(200).send(entries);
 			} catch (error) {
 				fastify.log.error(
@@ -59,6 +62,32 @@ export default async function changelogRoutes(
 				reply
 					.code(500)
 					.send({ message: "Failed to retrieve changelog entries" });
+			}
+		}
+	);
+	fastify.get(
+		"/:id",
+		{ schema: { params: getIdParamsSchema } },
+		async (
+			request: FastifyRequest<{ Params: GetIdParams }>,
+			reply: FastifyReply
+		) => {
+			try {
+				const id = request.params.id;
+				const objectId = new ObjectId(id);
+				const entry = await changelogsCollection.findOne({ _id: objectId });
+				if (!entry) {
+					reply.code(404).send({ message: "Changelog entry not found" });
+					return;
+				}
+				reply.code(200).send(entry);
+			} catch (err) {
+				fastify.log.error(err, "Failed to retrieve changelog entry");
+				if (!reply.sent) {
+					reply
+						.code(500)
+						.send({ message: "Failed to retrieve changelog entry" });
+				}
 			}
 		}
 	);
@@ -87,12 +116,13 @@ export default async function changelogRoutes(
 				// TODO: Refine input handling (parse commits, PR data etc.)
 				// TODO: Determine title, tags, breaking_change more intelligently
 
-				const placeholderTitle = `Generated Entry ${new Date().toISOString()}`;
-				const placeholderDescription = `AI description based on input: ${raw_input.substring(0, 50)}...`; // Placeholder
-
+				const { title, description } = await generateChangelog(
+					fastify.openai,
+					raw_input
+				);
 				const newEntry: Omit<ChangelogEntry, "_id"> = {
-					title: placeholderTitle,
-					description: placeholderDescription,
+					title,
+					description,
 					commitShas: [], // TODO: Populate from input or trigger context
 					pullRequestUrl: null, // TODO: Populate from input or trigger context
 					tags: [trigger_type], // Example tag
@@ -119,12 +149,17 @@ export default async function changelogRoutes(
 				}
 
 				reply.code(201).send(createdEntry);
-			} catch (error) {
+			} catch (error: any) {
 				fastify.log.error(error, "Failed to generate changelog entry");
 				if (!reply.sent) {
-					reply
-						.code(500)
-						.send({ message: "Failed to generate changelog entry" });
+					// TODO: Add more specific error handling for OpenAI, Prompt, AI returned
+					const message =
+						error?.message?.includes("OpenAI") ||
+						error?.message?.includes("Prompt") ||
+						error?.message?.includes("AI returned")
+							? `Failed during AI processing: ${error.message}`
+							: "Failed to generate changelog entry";
+					reply.code(500).send({ message });
 				}
 			}
 		}

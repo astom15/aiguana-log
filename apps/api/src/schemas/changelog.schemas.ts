@@ -7,6 +7,15 @@ export const generateChangelogBodySchema = z.object({
 	trigger_type: z.nativeEnum(TriggerType).default(TriggerType.MANUAL),
 });
 
+export const getIdParamsSchema = z.object({
+	id: z.string().refine(
+		(val) => {
+			return ObjectId.isValid(val);
+		},
+		{ message: "Invalid ObjectId format for ID parameter" }
+	),
+});
+
 export const changelogResponseSchema = z.object({
 	_id: z.instanceof(ObjectId).transform((id) => id.toString()),
 	title: z.string(),
@@ -32,3 +41,4 @@ export const changelogListResponseSchema = z.array(changelogResponseSchema);
 export type GenerateChangelogBody = z.infer<typeof generateChangelogBodySchema>;
 export type ChangelogResponse = z.infer<typeof changelogResponseSchema>;
 export type ChangelogListResponse = z.infer<typeof changelogListResponseSchema>;
+export type GetIdParams = z.infer<typeof getIdParamsSchema>;
