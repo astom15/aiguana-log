@@ -49,8 +49,17 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  apps/shared-types:
+    dependencies:
+      mongodb:
+        specifier: ^6.15.0
+        version: 6.15.0
+
   apps/web:
     dependencies:
+      '@aiguana/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       next:
         specifier: 15.3.1
         version: 15.3.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

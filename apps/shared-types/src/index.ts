@@ -7,12 +7,11 @@ export interface ChangelogEntry {
 	commitShas: string[];
 	pullRequestUrl?: string | null;
 	tags?: string[];
-	status: "draft" | "published";
-	triggerType: "push" | "pull_request" | "manual";
+	status: Status;
+	triggerType: TriggerType;
 	generatedAt: Date;
 	publishedAt?: Date | null;
 	author?: string | null;
-
 	breaking_change?: boolean;
 	aiModelUsed?: string;
 }
@@ -21,4 +20,9 @@ export enum TriggerType {
 	PUSH = "push",
 	PULL_REQUEST = "pull_request",
 	MANUAL = "manual",
+}
+
+export enum Status {
+	DRAFT = "draft",
+	PUBLISHED = "published",
 }

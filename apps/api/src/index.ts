@@ -8,6 +8,7 @@ import {
 } from "fastify-type-provider-zod";
 import mongoDbPlugin from "./plugins/mongodb";
 import changelogRoutes from "./routes/changelog.routes";
+
 const schema = {
 	type: "object",
 	required: ["PORT", "CORS_ORIGIN", "MONGODB_URI", "MONGODB_DB_NAME"],
@@ -42,15 +43,6 @@ const buildServer = async () => {
 	});
 	await server.register(mongoDbPlugin);
 	await server.register(changelogRoutes, { prefix: "/api/changelogs" });
-	server.get("/ping", async (request, reply) => {
-		server.log.info(`Ping received. NODE_ENV=${server.config.NODE_ENV}`);
-		if (server.mongo) {
-			server.log.info("MongoDB connected");
-		} else {
-			server.log.error("MongoDB not connected");
-		}
-		return { message: "pong from Fastify API!" };
-	});
 
 	return server;
 };

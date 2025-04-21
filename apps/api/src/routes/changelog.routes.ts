@@ -5,20 +5,21 @@ import {
 	FastifyReply,
 } from "fastify";
 import { z } from "zod";
-import { ChangelogEntry, TriggerType } from "../types/changelog.types";
+
 import {
 	GenerateChangelogBody,
 	generateChangelogBodySchema,
 	changelogResponseSchema,
 	changelogListResponseSchema,
 } from "../schemas/changelog.schemas";
+import { ChangelogEntry, Status } from "../../../shared-types/src";
 /**
  * @param fastify - The Fastify instance.
  * @param options - Plugin options.
  */
 export default async function changelogRoutes(
 	fastify: FastifyInstance,
-	options: FastifyPluginOptions
+	_options: FastifyPluginOptions
 ) {
 	const changelogsCollection =
 		fastify.mongo.db.collection<ChangelogEntry>("changelogs");
@@ -35,11 +36,11 @@ export default async function changelogRoutes(
 				},
 			},
 		},
-		async (request: FastifyRequest, reply: FastifyReply) => {
+		async (_request: FastifyRequest, reply: FastifyReply) => {
 			try {
 				const entries = await changelogsCollection
 					.find(
-						{ status: "published" },
+						{ status: Status.PUBLISHED },
 						{
 							sort: { publishedAt: -1 },
 							limit: 10,
@@ -48,8 +49,8 @@ export default async function changelogRoutes(
 						}
 					)
 					.toArray();
-
-				reply.send(entries);
+				console.log(entries);
+				reply.code(200).send(entries);
 			} catch (error) {
 				fastify.log.error(
 					error,
@@ -95,7 +96,7 @@ export default async function changelogRoutes(
 					commitShas: [], // TODO: Populate from input or trigger context
 					pullRequestUrl: null, // TODO: Populate from input or trigger context
 					tags: [trigger_type], // Example tag
-					status: "draft", // Start as draft
+					status: Status.DRAFT,
 					triggerType: trigger_type, // Assign the validated enum string value
 					generatedAt: new Date(),
 					publishedAt: null,

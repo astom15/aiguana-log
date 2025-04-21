@@ -3,14 +3,17 @@
 
 	"compilerOptions": {
 		"composite": true,
-		"outDir": "./dist",
-		"rootDir": "./src",
+		"outDir": "dist",
+		"rootDir": "src",
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+
 		"module": "CommonJS",
-		"baseUrl": ".",
-		"declaration": true
+		"baseUrl": "."
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"],
 
-	"references": [{ "path": "../shared-types" }]
+	"references": []
 }

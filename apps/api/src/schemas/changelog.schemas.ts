@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TriggerType } from "../types/changelog.types";
+import { Status, TriggerType } from "../../../shared-types/src";
 import { ObjectId } from "mongodb";
 
 export const generateChangelogBodySchema = z.object({
@@ -14,13 +14,15 @@ export const changelogResponseSchema = z.object({
 	commitShas: z.array(z.string()),
 	pullRequestUrl: z.string().nullable(),
 	tags: z.array(z.string()),
-	status: z.enum(["draft", "published"]),
+	status: z.nativeEnum(Status),
 	triggerType: z.nativeEnum(TriggerType),
-	generatedAt: z.date().transform((date) => date.toISOString()),
+	generatedAt: z
+		.date()
+		.transform((date) => (date instanceof Date ? date.toISOString() : date)),
 	publishedAt: z
 		.date()
 		.nullable()
-		.transform((date) => date?.toISOString() ?? null),
+		.transform((date) => (date ? date.toISOString() : null)),
 	author: z.string().nullable(),
 	breaking_change: z.boolean(),
 });

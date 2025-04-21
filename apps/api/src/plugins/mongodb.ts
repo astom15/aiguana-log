@@ -11,7 +11,7 @@ export interface FastifyMongoObject {
 
 async function mongoDbPlugin(
 	fastify: FastifyInstance,
-	options: FastifyPluginOptions
+	_options: FastifyPluginOptions
 ): Promise<void> {
 	const mongoUri = fastify.config.MONGODB_URI;
 
