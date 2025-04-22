@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import fs from "node:fs";
 import path from "node:path";
+import { ChangelogInput } from "../types/changelog.types";
 // TODO: Add more robust error handling for file reading
 let promptTemplate = "Error: Could not load prompt template.";
 try {
@@ -15,12 +16,16 @@ try {
 
 export async function generateChangelog(
 	openaiClient: OpenAI,
-	rawInput: string
-): Promise<{ title: string; description: string }> {
+	input: ChangelogInput
+): Promise<{ title: string; summary: string; description: string }> {
 	if (promptTemplate.startsWith("Error:")) {
 		throw new Error("Prompt template could not be loaded.");
 	}
-	const prompt = promptTemplate.replace("{{raw_input}}", rawInput);
+	let prompt = promptTemplate;
+	prompt = prompt.replace("{{pr_title}}", input.prTitle || "N/A");
+	prompt = prompt.replace("{{pr_body}}", input.prBody || "N/A");
+	prompt = prompt.replace("{{code_diff}}", input.codeDiff || "N/A");
+
 	try {
 		const completion = await openaiClient.chat.completions.create({
 			model: "gpt-4o-mini",
@@ -44,19 +49,21 @@ export async function generateChangelog(
 			const parsedResponse = JSON.parse(content);
 			if (
 				typeof parsedResponse.title === "string" &&
+				typeof parsedResponse.summary === "string" &&
 				typeof parsedResponse.description === "string"
 			) {
 				return {
 					title: parsedResponse.title.trim(),
+					summary: parsedResponse.summary.trim(),
 					description: parsedResponse.description.trim(),
 				};
 			} else {
 				console.error(
-					"Parsed JSON response missing title or description string fields:",
+					"Parsed JSON response missing title, summary, or description string fields:",
 					parsedResponse
 				);
 				throw new Error(
-					"Parsed JSON response missing title or description string fields."
+					"Parsed JSON response missing title, summary, or description string fields."
 				);
 			}
 		} catch (parseError) {
