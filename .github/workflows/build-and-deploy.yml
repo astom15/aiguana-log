@@ -12,14 +12,11 @@ jobs:
   build_and_deploy: # Combine build and deploy into one job for simplicity
     runs-on: ubuntu-latest
     env:
-      # Set NEXT_PUBLIC_API_URL based on branch using GitHub Variables
       NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
-      # Set target Heroku app name based on branch
       HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
-      # Set target Firebase site based on branch
       FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
-      # Define the Heroku registry image tag
       HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
     steps:
       - name: Checkout Code
@@ -70,6 +67,11 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:release web --app $HEROKU_APP_NAME
 
+      - name: Apply Firebase Target
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        run: npx firebase-tools target:apply hosting $FIREBASE_TARGET $FIREBASE_TARGET --project aiguana-log --token $FIREBASE_TOKEN
+
+      # Step: Deploy Frontend Artifacts to Firebase
       - name: Deploy Frontend to Firebase
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         uses: FirebaseExtended/action-hosting-deploy@v0.9.0
