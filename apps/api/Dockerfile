@@ -12,7 +12,7 @@ COPY package.json ./
 
 COPY apps/api/package.json ./apps/api/
 
-COPY packages/shared-types/package.json ./packages/shared-types/
+COPY apps/shared-types/package.json ./apps/shared-types/
 
 RUN corepack enable && pnpm install --prod --filter api... --frozen-lockfile
 
