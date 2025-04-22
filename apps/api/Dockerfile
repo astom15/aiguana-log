@@ -6,22 +6,16 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 # ---- Dependencies Stage ----
-# Prepare production dependencies using pnpm deploy
+# Install only production dependencies for this package
 FROM base AS deps
 WORKDIR /app
 
-# Copy lockfile and root package.json first
+# Copy only the necessary files for installing this package's deps
 COPY pnpm-lock.yaml ./
-COPY package.json ./
+COPY apps/api/package.json ./
 
-# Copy necessary package.json files for workspace resolution
-COPY apps/api/package.json ./apps/api/
-COPY apps/shared-types/package.json ./apps/shared-types/ 
-
-# Use pnpm deploy to copy the target package ('api') and its prod dependencies
-# to a deployment directory './out'. It uses the lockfile to ensure correct versions.
-# Ensure 'api' matches the "name" field in apps/api/package.json
-RUN corepack enable && pnpm deploy --prod --filter api --legacy ./out
+# Install ONLY production dependencies for the 'api' package
+RUN corepack enable && pnpm install --prod --frozen-lockfile
 
 # ---- Runner Stage ----
 # Create a new clean stage for the final image
@@ -29,11 +23,10 @@ FROM base AS runner
 WORKDIR /app
 
 # Copy the specific package.json for runtime info (e.g., start script)
-# Copy it from the original location in the build context
 COPY apps/api/package.json ./
 
-# Copy production node_modules AND package files from the './out' directory created by pnpm deploy
-COPY --from=deps /app/out/node_modules ./node_modules
+# Copy production node_modules from the deps stage
+COPY --from=deps /app/node_modules ./node_modules
 # Copy the compiled application code from the build output created by CI
 COPY apps/api/dist ./dist
 # Copy runtime files if needed (e.g., prompt files)
