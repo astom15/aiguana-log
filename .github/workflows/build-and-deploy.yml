@@ -1,35 +1,30 @@
-name: Build and Deploy Monorepo
+name: Build and Deploy Monorepo Artifacts
 
 on:
   push:
     branches: [master, develop]
-
   pull_request:
     branches: [master, develop]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
     env:
-      NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
+      HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
+      FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
+      HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
     steps:
-      # Step 1: Check out the repository code under $GITHUB_WORKSPACE
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Set up pnpm package manager
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.8.1
+          version: 10
 
-      # Step 3: Set up Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -39,42 +34,60 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Remove .env.local
+        working-directory: apps/web
+        run: rm -f .env.local
+
       - name: Build All Packages
-        run: pnpm build
-        # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            export NEXT_PUBLIC_API_URL="${{ vars.PROD_BACKEND_API_URL }}"
+          else
+            export NEXT_PUBLIC_API_URL="${{ vars.DEV_BACKEND_API_URL }}"
+          fi
+          echo " USING NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
+          pnpm build
 
-      - name: Deploy API to Heroku Dev
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_DEV_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          appdir: "apps/api"
+      - name: Verify API Build Output
+        run: ls -R apps/api/dist
 
-      - name: Deploy Frontend to Firebase Dev
-        if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Install Heroku CLI
+        run: npm install -g heroku
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # --- Deployment steps ---
+      - name: Log in to Heroku Container Registry
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku container:login
+
+      - name: Build Docker image
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        run: docker build -t $HEROKU_REGISTRY_IMAGE -f apps/api/Dockerfile .
+
+      - name: Push Docker image to Heroku
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        run: docker push $HEROKU_REGISTRY_IMAGE
+
+      - name: Release Docker image on Heroku
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku container:release web --app $HEROKU_APP_NAME
+
+      - name: Apply Firebase Target
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        run: firebase target:apply hosting $FIREBASE_TARGET $FIREBASE_TARGET --project aiguana-log --token $FIREBASE_TOKEN
+
+      - name: Deploy Frontend to Firebase
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        uses: FirebaseExtended/action-hosting-deploy@v0.9.0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          token: ${{ secrets.FIREBASE_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AIGUANA_LOG }}
           projectId: aiguana-log
-          target: aiguana-log-dev
-
-      - name: Deploy API to Heroku Prod
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_PROD_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          appdir: "apps/api"
-
-      - name: Deploy Frontend to Firebase Prod
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          token: ${{ secrets.FIREBASE_TOKEN }}
-          projectId: aiguana-log
-          target: aiguana-log
+          target: ${{ env.FIREBASE_TARGET }}
+          channelId: live

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Status, TriggerType } from "../../../shared-types/src";
 import { ObjectId } from "mongodb";
+import { TriggerType, Status } from "../types/changelog.types";
 
 export const generateChangelogBodySchema = z.object({
 	raw_input: z.string().min(1, { message: "Raw input is required" }),

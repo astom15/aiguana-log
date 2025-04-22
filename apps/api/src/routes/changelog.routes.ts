@@ -13,9 +13,9 @@ import {
 	GetIdParams,
 	getIdParamsSchema,
 } from "../schemas/changelog.schemas";
-import { ChangelogEntry, Status } from "../../../shared-types/src";
 import { ObjectId } from "mongodb";
 import { generateChangelog } from "../services/openai.service";
+import { ChangelogEntry, Status } from "../types/changelog.types";
 
 /**
  * @param fastify - The Fastify instance.
@@ -164,8 +164,4 @@ export default async function changelogRoutes(
 			}
 		}
 	);
-	// POST /generate
-	// GET /:id
-	// PUT /:id
-	// etc.
 }
