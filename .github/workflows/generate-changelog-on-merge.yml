@@ -2,7 +2,8 @@ name: Generate Changelog on PR Merge
 
 on:
   pull_request:
-    types: [closed]
+    #types: [closed]
+    branches: [develop]
 
 jobs:
   generate_changelog_entry:
