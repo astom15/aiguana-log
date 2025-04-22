@@ -17,7 +17,7 @@ jobs:
       # Set target Heroku app name based on branch
       HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
       # Set target Firebase site based on branch
-      FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log-prod' || 'aiguana-log-dev' }}
+      FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
       # Define the Heroku registry image tag
       HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
 
