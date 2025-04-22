@@ -34,6 +34,10 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Remove .env.local
+        working-directory: apps/web
+        run: rm -f .env.local
+
       - name: Build All Packages
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
@@ -41,6 +45,7 @@ jobs:
           else
             export NEXT_PUBLIC_API_URL="${{ vars.DEV_BACKEND_API_URL }}"
           fi
+          echo " USING NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
           pnpm build
 
       - name: Verify API Build Output
