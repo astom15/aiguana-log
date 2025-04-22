@@ -5,7 +5,8 @@ WORKDIR /app
 # ---- Dependencies Stage ----
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY pnpm-lock.yaml ./
+COPY apps/api/package.json ./
 RUN corepack enable && pnpm install --prod --frozen-lockfile
 
 # ---- Build Stage (if not already built in CI) ----
@@ -19,16 +20,11 @@ RUN corepack enable && pnpm install --prod --frozen-lockfile
 
 FROM base AS runner
 WORKDIR /app
-COPY package.json ./
+COPY apps/api/package.json ./
 COPY --from=deps /app/node_modules ./node_modules
-# Copy the compiled application code from the build stage or local build output
-# If building in CI before docker build: COPY ./dist ./dist
-# If building inside docker (using builder stage): COPY --from=builder /app/dist ./dist
-COPY ./dist ./dist 
+COPY apps/api/dist ./dist
 
-# Copy runtime files if needed (e.g., prompt files)
-# Ensure the path is correct relative to the Dockerfile location
-COPY ./src/prompts ./src/prompts
+COPY apps/api/src/prompts ./src/prompts
 
 EXPOSE 3001
 

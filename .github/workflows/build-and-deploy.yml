@@ -1,38 +1,35 @@
-name: Build and Deploy Monorepo
+# .github/workflows/build-and-deploy.yml
+name: Build and Deploy Monorepo Artifacts
 
 on:
   push:
     branches: [master, develop]
-
   pull_request:
     branches: [master, develop]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build:
+  build_and_deploy: # Combine build and deploy into one job for simplicity
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
     env:
+      # Set NEXT_PUBLIC_API_URL based on branch using GitHub Variables
       NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
+      # Set target Heroku app name based on branch
       HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
-      FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
+      # Set target Firebase site based on branch
+      FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log-prod' || 'aiguana-log-dev' }}
+      # Define the Heroku registry image tag
       HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
 
     steps:
-      # Step 1: Check out the repository code under $GITHUB_WORKSPACE
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Set up pnpm package manager
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.8.1
+          version: 10
 
-      # Step 3: Set up Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -51,6 +48,8 @@ jobs:
       - name: Install Heroku CLI
         run: npm install -g heroku
 
+      # --- Deployment steps ---
+
       - name: Log in to Heroku Container Registry
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         env:
@@ -59,7 +58,7 @@ jobs:
 
       - name: Build Docker image
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        run: docker build -t $HEROKU_REGISTRY_IMAGE -f apps/api/Dockerfile ./apps/api
+        run: docker build -t $HEROKU_REGISTRY_IMAGE -f apps/api/Dockerfile .
 
       - name: Push Docker image to Heroku
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
@@ -71,7 +70,6 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:release web --app $HEROKU_APP_NAME
 
-        # Step: Deploy Frontend Artifacts to Firebase
       - name: Deploy Frontend to Firebase
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         uses: FirebaseExtended/action-hosting-deploy@v0
