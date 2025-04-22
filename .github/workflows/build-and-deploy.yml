@@ -1,4 +1,3 @@
-# .github/workflows/build-and-deploy.yml
 name: Build and Deploy Monorepo Artifacts
 
 on:
@@ -9,10 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_deploy: # Combine build and deploy into one job for simplicity
+  build_and_deploy:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
       HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
       FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
       HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
@@ -37,7 +35,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build All Packages
-        run: pnpm build
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            export NEXT_PUBLIC_API_URL="${{ vars.PROD_BACKEND_API_URL }}"
+          else
+            export NEXT_PUBLIC_API_URL="${{ vars.DEV_BACKEND_API_URL }}"
+          fi
+          pnpm build
 
       - name: Verify API Build Output
         run: ls -R apps/api/dist
@@ -45,8 +49,10 @@ jobs:
       - name: Install Heroku CLI
         run: npm install -g heroku
 
-      # --- Deployment steps ---
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
+      # --- Deployment steps ---
       - name: Log in to Heroku Container Registry
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         env:
@@ -69,9 +75,8 @@ jobs:
 
       - name: Apply Firebase Target
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        run: npx firebase-tools target:apply hosting $FIREBASE_TARGET $FIREBASE_TARGET --project aiguana-log --token $FIREBASE_TOKEN
+        run: firebase target:apply hosting $FIREBASE_TARGET $FIREBASE_TARGET --project aiguana-log --token $FIREBASE_TOKEN
 
-      # Step: Deploy Frontend Artifacts to Firebase
       - name: Deploy Frontend to Firebase
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         uses: FirebaseExtended/action-hosting-deploy@v0.9.0
