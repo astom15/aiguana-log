@@ -44,6 +44,10 @@ jobs:
       - name: Build All Packages
         run: pnpm build
       # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
+
+      - name: Install Heroku CLI
+        run: npm install -g heroku
+
       - name: Log in to Heroku Container Registry
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         env:
