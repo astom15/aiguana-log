@@ -33,7 +33,7 @@ COPY --from=deps /app/node_modules ./node_modules
 # This assumes the CI build step ran successfully before docker build
 COPY apps/api/dist ./dist
 # Copy runtime files if needed (e.g., prompt files)
-COPY apps/api/src/prompts ./prompts
+COPY apps/prompts ./dist/prompts
 
 # Expose the port the app runs on (Heroku assigns $PORT dynamically)
 EXPOSE 3001
