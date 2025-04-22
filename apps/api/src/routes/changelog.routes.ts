@@ -164,8 +164,4 @@ export default async function changelogRoutes(
 			}
 		}
 	);
-	// POST /generate
-	// GET /:id
-	// PUT /:id
-	// etc.
 }
