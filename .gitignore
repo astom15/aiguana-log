@@ -27,6 +27,10 @@ pnpm-debug.log*
 *.sublime-workspace
 *.sublime-project
 
+# Firebase hosting cache files
+hosting.*.cache
+.firebase/hosting.*.cache
+
 # Mac / Windows specific files
 .DS_Store
 Thumbs.db

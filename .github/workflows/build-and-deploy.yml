@@ -15,6 +15,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    env:
+      NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
 
     steps:
       # Step 1: Check out the repository code under $GITHUB_WORKSPACE
