@@ -1,13 +1,11 @@
-name: Build Monorepo
+name: Build and Deploy Monorepo
 
 on:
-  # Triggers the workflow on push events but only for the main and develop branches
   push:
-    branches: [main, develop]
+    branches: [master, develop]
 
-  # Triggers the workflow on pull request events targeting the main or develop branches
   pull_request:
-    branches: [main, develop]
+    branches: [master, develop]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -16,9 +14,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+      name: ${{ github.ref == 'refs/heads/master' && 'production' || 'development' }}
     env:
-      NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
+      NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
 
     steps:
       # Step 1: Check out the repository code under $GITHUB_WORKSPACE
@@ -64,7 +62,7 @@ jobs:
           target: aiguana-log-dev
 
       - name: Deploy API to Heroku Prod
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: akhileshns/heroku-deploy@v3.13.15
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
@@ -73,7 +71,7 @@ jobs:
           appdir: "apps/api"
 
       - name: Deploy Frontend to Firebase Prod
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
