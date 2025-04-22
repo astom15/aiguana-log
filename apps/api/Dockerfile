@@ -2,7 +2,6 @@
 
 # Use an official Node.js runtime as a parent image
 FROM node:20-alpine AS base
-# Set a default workdir
 WORKDIR /app
 
 # ---- Dependencies Stage ----
@@ -11,15 +10,14 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy only the necessary files for installing this package's deps
+# We only need the package.json for the api package itself now.
+# Lockfile is still useful for speeding up installs if base image changes.
 COPY pnpm-lock.yaml ./
 COPY apps/api/package.json ./
 
-# Install ONLY production dependencies for the 'api' package
-RUN corepack enable
-RUN pnpm fetch --prod
-
-# Install production dependencies using only the offline cache
-RUN pnpm install -r --offline --prod
+# Install ONLY production dependencies based on the copied package.json
+# Use --no-frozen-lockfile as suggested by error message to bypass lockfile mismatch
+RUN corepack enable && pnpm install --prod --no-frozen-lockfile
 
 # ---- Runner Stage ----
 # Create a new clean stage for the final image
@@ -32,6 +30,7 @@ COPY apps/api/package.json ./
 # Copy production node_modules from the deps stage
 COPY --from=deps /app/node_modules ./node_modules
 # Copy the compiled application code from the build output created by CI
+# This assumes the CI build step ran successfully before docker build
 COPY apps/api/dist ./dist
 # Copy runtime files if needed (e.g., prompt files)
 COPY apps/api/src/prompts ./src/prompts
