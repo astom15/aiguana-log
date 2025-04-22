@@ -26,3 +26,9 @@ export enum Status {
 	DRAFT = "draft",
 	PUBLISHED = "published",
 }
+
+export interface ApiError {
+	message: string;
+	code?: string;
+	statusCode?: number;
+}

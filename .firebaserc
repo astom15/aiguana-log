@@ -1,0 +1,18 @@
+{
+	"projects": {
+		"default": "aiguana-log"
+	},
+	"targets": {
+		"ai-guanalog": {
+			"hosting": {
+				"aiguana-log-dev": [
+					"aiguana-log-dev"
+				],
+				"aiguana-log": [
+					"aiguana-log"
+				]
+			}
+		}
+	},
+	"etags": {}
+}

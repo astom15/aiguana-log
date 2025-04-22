@@ -1,9 +1,9 @@
 "use client"; // Necessary for useState, useEffect
 
 import { useState, useEffect } from "react";
-import type { ChangelogEntry as TrueChangelogEntry } from "@aiguana/shared-types";
 import { SerializedChangelogEntry } from "../types/changelog.types";
 import { formatDate } from "../utils/date.utils";
+import { ApiError } from "../../../shared-types/src";
 
 export default function ChangelogPage() {
 	const [changelogs, setChangelogs] = useState<SerializedChangelogEntry[]>([]);
@@ -28,9 +28,10 @@ export default function ChangelogPage() {
 				}
 				const data: SerializedChangelogEntry[] = await response.json();
 				setChangelogs(data);
-			} catch (e: any) {
+			} catch (e) {
 				console.error("Failed to fetch changelogs:", e);
-				setError(e.message || "Failed to load changelogs.");
+				const error = e as ApiError;
+				setError(error.message || "Failed to load changelogs.");
 			} finally {
 				setIsLoading(false);
 			}

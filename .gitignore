@@ -16,6 +16,7 @@ pnpm-debug.log*
 
 # Environment variables
 .env*
+!apps/api/.env.example
 # IDE / Editor specific files
 .idea
 .vscode/*
