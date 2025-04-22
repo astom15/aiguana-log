@@ -85,6 +85,7 @@ jobs:
           echo "code_diff=$PR_DIFF_ESCAPED" >> $GITHUB_OUTPUT
           echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
           echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT # Output boolean string
+        shell: bash
 
       - name: Call Changelog Generation API
         run: |
