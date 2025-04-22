@@ -3,6 +3,7 @@ name: Generate Changelog on PR Merge
 on:
   pull_request:
     #types: [closed]
+    types: [opened, synchronize, reopened]
     branches: [develop]
 
 jobs:
