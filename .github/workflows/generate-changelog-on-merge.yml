@@ -119,6 +119,6 @@ jobs:
           # Send the jq-generated payload
           curl -X POST -H "Content-Type: application/json" \
               -d "$JSON_PAYLOAD" \
-              ${{ env.TARGET_API_URL }}/api/changelogs/generate \
+              ${{ env.TARGET_API_URL }}/changelogs/generate \
               --fail
       # TODO: Add steps for handling API failure if needed
