@@ -48,16 +48,15 @@ jobs:
       - name: Install Heroku CLI
         run: npm install -g heroku
 
-      - name: Verify Target Heroku App
-        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        run: |
-          echo "Attempting to deploy to Heroku app: $HEROKU_APP_NAME"
-
       - name: Log in to Heroku Container Registry
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:login
+
+      - name: check heroku app name
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        run: heroku stack -a $HEROKU_APP_NAME
 
       # Step: Build and Push API Docker image to Heroku
       - name: Build and Push API Docker image to Heroku
