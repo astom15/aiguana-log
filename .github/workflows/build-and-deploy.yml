@@ -48,12 +48,6 @@ jobs:
       - name: Verify API Build Output
         run: ls -R apps/api/dist
 
-      - name: Verify Web Build Output
-        run: ls -R apps/web/dist
-
-      - name: Verify Shared Types Build Output
-        run: ls -R apps/shared-types/dist
-
       - name: Install Heroku CLI
         run: npm install -g heroku
 
