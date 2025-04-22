@@ -100,11 +100,18 @@ jobs:
           JSON_PAYLOAD=$(
             jq -n \
               --arg pr_title "$INPUT_PR_TITLE" \
-              --argjson pr_body "$INPUT_PR_BODY" \
+              --arg pr_body "$INPUT_PR_BODY" \
               --arg code_diff "$INPUT_CODE_DIFF" \
               --argjson tags "$INPUT_TAGS_JSON" \
               --argjson is_breaking "$INPUT_IS_BREAKING" \
-              '{pr_title: $pr_title, pr_body: $pr_body, code_diff: $code_diff, tags: $tags, is_breaking_change: $is_breaking, trigger_type: "pull_request"}'
+              '{
+                pr_title: $pr_title,
+                pr_body: (if $pr_body == "" or $pr_body == "null" then null else $pr_body end),
+                code_diff: $code_diff,
+                tags: $tags,
+                is_breaking_change: $is_breaking,
+                trigger_type: "pull_request"
+              }'
           )
 
           echo "Sending payload to ${{ env.TARGET_API_URL }}/api/changelogs/generate"
