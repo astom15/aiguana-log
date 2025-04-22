@@ -43,21 +43,30 @@ jobs:
 
       - name: Build All Packages
         run: pnpm build
-
-      - name: Install Heroku CLI
-        run: npm install -g heroku
-
-        # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
-      - name: Deploy API to Heroku
+      # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
+      - name: Log in to Heroku Container Registry
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          heroku_app_name: ${{ env.HEROKU_APP_NAME }}
-          appdir: "apps/api"
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku container:login
 
-      # Step: Deploy Frontend Artifacts to Firebase
+      # Step: Build and Push API Docker image to Heroku
+      - name: Build and Push API Docker image to Heroku
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        # Use the Heroku CLI to build the Docker image defined in apps/api/Dockerfile
+        # and push it to the Heroku registry for the target app.
+        run: heroku container:push web --app $HEROKU_APP_NAME --context-path ./apps/api
+
+      # Step: Release Docker image on Heroku
+      - name: Release Docker image on Heroku
+        if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        # Use the Heroku CLI to release the image that was just pushed
+        run: heroku container:release web --app $HEROKU_APP_NAME
+        # Step: Deploy Frontend Artifacts to Firebase
       - name: Deploy Frontend to Firebase
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         uses: FirebaseExtended/action-hosting-deploy@v0
