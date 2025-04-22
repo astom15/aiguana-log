@@ -1,0 +1,59 @@
+name: Build Monorepo
+
+on:
+  # Triggers the workflow on push events but only for the main and develop branches
+  push:
+    branches: [main, develop]
+
+  # Triggers the workflow on pull request events targeting the main or develop branches
+  pull_request:
+    branches: [main, develop]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code under $GITHUB_WORKSPACE
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up pnpm package manager
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.8.1
+
+      # Step 3: Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Build All Packages
+        run: pnpm build
+        # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
+
+      # --- Deployment steps would be added below this line later ---
+      # - name: Deploy API to Heroku Dev
+      #   if: github.ref == 'refs/heads/develop'
+      #   run: # ... command to deploy apps/api/dist to heroku-dev ...
+      #
+      # - name: Deploy Frontend to Firebase Dev
+      #   if: github.ref == 'refs/heads/develop'
+      #   run: # ... command to deploy apps/web/out to firebase dev site ...
+      #
+      # - name: Deploy API to Heroku Prod
+      #   if: github.ref == 'refs/heads/main'
+      #   run: # ... command to deploy apps/api/dist to heroku-prod ...
+      #
+      # - name: Deploy Frontend to Firebase Prod
+      #   if: github.ref == 'refs/heads/main'
+      #   run: # ... command to deploy apps/web/out to firebase prod site ...
