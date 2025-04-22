@@ -21,8 +21,7 @@ COPY apps/shared-types/package.json ./apps/shared-types/
 # Use pnpm deploy to copy the target package ('api') and its prod dependencies
 # to a deployment directory './out'. It uses the lockfile to ensure correct versions.
 # Ensure 'api' matches the "name" field in apps/api/package.json
-RUN corepack enable && pnpm deploy --prod --filter api ./out
-# The output in './out' will contain the pruned node_modules and package files for 'api'
+RUN corepack enable && pnpm deploy --prod --filter api --legacy ./out
 
 # ---- Runner Stage ----
 # Create a new clean stage for the final image
