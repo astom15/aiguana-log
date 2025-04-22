@@ -15,7 +15,11 @@ COPY pnpm-lock.yaml ./
 COPY apps/api/package.json ./
 
 # Install ONLY production dependencies for the 'api' package
-RUN corepack enable && pnpm install --prod --frozen-lockfile
+RUN corepack enable
+RUN pnpm fetch --prod
+
+# Install production dependencies using only the offline cache
+RUN pnpm install -r --offline --prod
 
 # ---- Runner Stage ----
 # Create a new clean stage for the final image
