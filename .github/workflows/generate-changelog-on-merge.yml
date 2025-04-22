@@ -1,0 +1,106 @@
+name: Generate Changelog on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  generate_changelog_entry:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      TARGET_API_URL: ${{ github.event.pull_request.base.ref == 'master' && vars.PROD_BACKEND_API_URL || github.event.pull_request.base.ref == 'develop' && vars.DEV_BACKEND_API_URL || '' }}
+
+    steps:
+      - name: Verify Target Environment
+        run: |
+          echo "PR merged into: ${{ github.event.pull_request.base.ref }}"
+          echo "Target API URL: ${{ env.TARGET_API_URL }}"
+          if [[ -z "${{ env.TARGET_API_URL }}" ]]; then
+            echo "Target branch is not master or develop, skipping generation."
+            exit 0 # Exit successfully without running subsequent steps
+          fi
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR Diff
+        id: diff
+        run: |
+          BASE_SHA=$(echo "${{ github.event.pull_request.base.sha }}")
+          HEAD_SHA=$(echo "${{ github.event.pull_request.head.sha }}")
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA (Merge Commit): $HEAD_SHA"
+          PR_DIFF=$(git diff --stat=1000 --unified=0 $BASE_SHA $HEAD_SHA || echo "Error generating diff")
+          # Limit diff size if necessary (e.g., first 500 lines)
+          LIMITED_DIFF=$(echo "$PR_DIFF" | head -n 500)
+          # Escape the diff for JSON embedding
+          ESCAPED_DIFF=$(echo "$LIMITED_DIFF" | jq -sR .)
+          echo "diff=$ESCAPED_DIFF" >> $GITHUB_OUTPUT
+
+      - name: Prepare Input Data
+        id: input_data
+        run: |
+          PR_TITLE_RAW="${{ github.event.pull_request.title }}"
+          REGEX="^([a-z]+)(\(([^)]+)\))?(!)?:(.*)$"
+          TAGS_JSON="[]"
+          IS_BREAKING_CHANGE="false"
+
+          if [[ "$PR_TITLE_RAW" =~ $REGEX ]]; then
+            TYPE="${BASH_REMATCH[1]}"
+            SCOPE="${BASH_REMATCH[3]}"
+            BREAKING_INDICATOR="${BASH_REMATCH[4]}"
+            echo "Parsed Type: $TYPE"
+            TAGS_JSON="[\"$TYPE\""
+            if [[ -n "$SCOPE" ]]; then
+              echo "Parsed Scope: $SCOPE"
+              TAGS_JSON="$TAGS_JSON, \"$SCOPE\""
+            fi
+            TAGS_JSON="$TAGS_JSON]"
+          if [[ "$BREAKING_INDICATOR" == "!" ]]; then
+              echo "Breaking change detected in title (!)"
+              IS_BREAKING_CHANGE="true"
+            fi
+          else
+            echo "PR title '$PR_TITLE_RAW' does not match Conventional Commit format."
+          fi
+          echo "Generated Tags JSON: $TAGS_JSON"
+          echo "Is Breaking Change: $IS_BREAKING_CHANGE"
+
+          PR_TITLE_ESCAPED=$(echo "$PR_TITLE_RAW" | jq -sR .)
+          PR_BODY_RAW="${{ github.event.pull_request.body }}"
+          if [[ -z "$PR_BODY_RAW" ]]; then PR_BODY_ESCAPED="null"; else PR_BODY_ESCAPED=$(echo "$PR_BODY_RAW" | jq -sR .); fi
+          PR_DIFF_ESCAPED="${{ steps.diff.outputs.diff }}"
+
+          echo "pr_title=$PR_TITLE_ESCAPED" >> $GITHUB_OUTPUT
+          echo "pr_body=$PR_BODY_ESCAPED" >> $GITHUB_OUTPUT
+          echo "code_diff=$PR_DIFF_ESCAPED" >> $GITHUB_OUTPUT
+          echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
+          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT
+
+      - name: Call Changelog Generation API
+        # Requires jq to be installed on runner (usually is on ubuntu-latest)
+        run: |
+          # Construct JSON payload including parsed tags
+          JSON_PAYLOAD=$(cat <<EOF
+          {
+            "pr_title": ${{ steps.input_data.outputs.pr_title }},
+            "pr_body": ${{ steps.input_data.outputs.pr_body }},
+            "code_diff": ${{ steps.input_data.outputs.code_diff }},
+            "tags": ${{ steps.input_data.outputs.tags }},
+            "is_breaking_change": ${{ steps.input_data.outputs.is_breaking_change }},
+            "trigger_type": "pull_request"
+          }
+          EOF
+          )
+          echo "Sending payload to ${{ env.TARGET_API_URL }}/api/changelogs/generate"
+          echo "Payload content (first 100 chars): $(echo $JSON_PAYLOAD | head -c 100)..." # Log snippet
+          # Add -f to fail step if API returns non-2xx status
+          curl -X POST -H "Content-Type: application/json" \
+               -d "$JSON_PAYLOAD" \
+               ${{ env.TARGET_API_URL }}/api/changelogs/generate \
+               --fail
+
+      # TODO: Add steps for handling API failure if needed

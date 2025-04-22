@@ -3,7 +3,11 @@ import { ObjectId } from "mongodb";
 import { TriggerType, Status } from "../types/changelog.types";
 
 export const generateChangelogBodySchema = z.object({
-	raw_input: z.string().min(1, { message: "Raw input is required" }),
+	pr_title: z.string().min(1, { message: "PR title cannot be empty" }),
+	pr_body: z.string().nullable().optional(),
+	code_diff: z.string().optional(),
+	tags: z.array(z.string()).optional().default([]),
+	is_breaking_change: z.boolean().optional().default(false),
 	trigger_type: z.nativeEnum(TriggerType).default(TriggerType.MANUAL),
 });
 
