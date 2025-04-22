@@ -19,6 +19,7 @@ jobs:
       NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/master' && vars.PROD_BACKEND_API_URL || vars.DEV_BACKEND_API_URL }}
       HEROKU_APP_NAME: ${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}
       FIREBASE_TARGET: ${{ github.ref == 'refs/heads/master' && 'aiguana-log' || 'aiguana-log-dev' }}
+      HEROKU_REGISTRY_IMAGE: registry.heroku.com/${{ github.ref == 'refs/heads/master' && secrets.HEROKU_PROD_APP_NAME || secrets.HEROKU_DEV_APP_NAME }}/web
 
     steps:
       # Step 1: Check out the repository code under $GITHUB_WORKSPACE
@@ -43,7 +44,15 @@ jobs:
 
       - name: Build All Packages
         run: pnpm build
-      # TODO: Ensure the root 'pnpm build' command correctly builds shared-types, api, and web
+
+      - name: Verify API Build Output
+        run: ls -R apps/api/dist
+
+      - name: Verify Web Build Output
+        run: ls -R apps/web/dist
+
+      - name: Verify Shared Types Build Output
+        run: ls -R apps/shared-types/dist
 
       - name: Install Heroku CLI
         run: npm install -g heroku
@@ -54,26 +63,20 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:login
 
-      - name: check heroku app name
+      - name: Build Docker image
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        run: heroku stack -a $HEROKU_APP_NAME
+        run: docker build -t $HEROKU_REGISTRY_IMAGE -f apps/api/Dockerfile ./apps/api
 
-      # Step: Build and Push API Docker image to Heroku
-      - name: Build and Push API Docker image to Heroku
+      - name: Push Docker image to Heroku
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        # Use the Heroku CLI to build the Docker image defined in apps/api/Dockerfile
-        # and push it to the Heroku registry for the target app.
-        run: heroku container:push web --app $HEROKU_APP_NAME --context-path ./apps/api
+        run: docker push $HEROKU_REGISTRY_IMAGE
 
-      # Step: Release Docker image on Heroku
       - name: Release Docker image on Heroku
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        # Use the Heroku CLI to release the image that was just pushed
         run: heroku container:release web --app $HEROKU_APP_NAME
+
         # Step: Deploy Frontend Artifacts to Firebase
       - name: Deploy Frontend to Firebase
         if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && github.event_name == 'push'
