@@ -42,24 +42,30 @@ jobs:
 
       - name: Prepare Input Data
         id: input_data
+        env:
+          PR_TITLE_RAW: ${{ github.event.pull_request.title }}
+          PR_BODY_RAW: ${{ github.event.pull_request.body }}
         run: |
-          PR_TITLE_RAW="${{ github.event.pull_request.title }}"
+          # --- Parse PR Title for Conventional Commit Info ---
+          # Use env var PR_TITLE_RAW
           REGEX="^([a-z]+)(\(([^)]+)\))?(!)?:(.*)$"
-          TAGS_JSON="[]"
-          IS_BREAKING_CHANGE="false"
+          TAGS_JSON="[]" # Default empty JSON array for tags
+          IS_BREAKING_CHANGE="false" # Default breaking change to false
 
           if [[ "$PR_TITLE_RAW" =~ $REGEX ]]; then
             TYPE="${BASH_REMATCH[1]}"
             SCOPE="${BASH_REMATCH[3]}"
-            BREAKING_INDICATOR="${BASH_REMATCH[4]}"
+            BREAKING_INDICATOR="${BASH_REMATCH[4]}" # Group 4 captures !
             echo "Parsed Type: $TYPE"
-            TAGS_JSON="[\"$TYPE\""
+            TAGS_JSON="[\"$TYPE\"" # Add type tag
             if [[ -n "$SCOPE" ]]; then
               echo "Parsed Scope: $SCOPE"
-              TAGS_JSON="$TAGS_JSON, \"$SCOPE\""
+              TAGS_JSON="$TAGS_JSON, \"$SCOPE\"" # Add scope tag if present
             fi
-            TAGS_JSON="$TAGS_JSON]"
-          if [[ "$BREAKING_INDICATOR" == "!" ]]; then
+            TAGS_JSON="$TAGS_JSON]" # Close JSON array
+
+            # Check for breaking change indicator (!)
+            if [[ "$BREAKING_INDICATOR" == "!" ]]; then
               echo "Breaking change detected in title (!)"
               IS_BREAKING_CHANGE="true"
             fi
@@ -69,21 +75,20 @@ jobs:
           echo "Generated Tags JSON: $TAGS_JSON"
           echo "Is Breaking Change: $IS_BREAKING_CHANGE"
 
+          # Use env vars $PR_TITLE_RAW and $PR_BODY_RAW
           PR_TITLE_ESCAPED=$(echo "$PR_TITLE_RAW" | jq -sR .)
-          PR_BODY_RAW="${{ github.event.pull_request.body }}"
           if [[ -z "$PR_BODY_RAW" ]]; then PR_BODY_ESCAPED="null"; else PR_BODY_ESCAPED=$(echo "$PR_BODY_RAW" | jq -sR .); fi
-          PR_DIFF_ESCAPED="${{ steps.diff.outputs.diff }}"
+          PR_DIFF_ESCAPED="${{ steps.diff.outputs.diff }}" # Already escaped
 
           echo "pr_title=$PR_TITLE_ESCAPED" >> $GITHUB_OUTPUT
           echo "pr_body=$PR_BODY_ESCAPED" >> $GITHUB_OUTPUT
           echo "code_diff=$PR_DIFF_ESCAPED" >> $GITHUB_OUTPUT
           echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
-          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT
+          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT # Output boolean string
 
       - name: Call Changelog Generation API
-        # Requires jq to be installed on runner (usually is on ubuntu-latest)
         run: |
-          # Construct JSON payload including parsed tags
+          # Construct JSON payload including parsed tags and breaking change flag
           JSON_PAYLOAD=$(cat <<EOF
           {
             "pr_title": ${{ steps.input_data.outputs.pr_title }},
