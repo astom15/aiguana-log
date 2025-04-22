@@ -2,12 +2,17 @@ name: Generate Changelog on PR Merge
 
 on:
   pull_request:
-    types: [closed]
+    #types: [closed]
+    types: [opened, synchronize, reopened]
+    branches: [develop]
 
 jobs:
   generate_changelog_entry:
-    if: github.event.pull_request.merged == true
+    #if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     env:
       TARGET_API_URL: ${{ github.event.pull_request.base.ref == 'master' && vars.PROD_BACKEND_API_URL || github.event.pull_request.base.ref == 'develop' && vars.DEV_BACKEND_API_URL || '' }}
 
@@ -33,12 +38,14 @@ jobs:
           HEAD_SHA=$(echo "${{ github.event.pull_request.head.sha }}")
           echo "Base SHA: $BASE_SHA"
           echo "Head SHA (Merge Commit): $HEAD_SHA"
-          PR_DIFF=$(git diff --stat=1000 --unified=0 $BASE_SHA $HEAD_SHA || echo "Error generating diff")
-          # Limit diff size if necessary (e.g., first 500 lines)
+          # Output raw diff, limit size
+          # Use process substitution and handle potential empty diff
+          PR_DIFF=$(git diff --stat=1000 --unified=0 "$BASE_SHA" "$HEAD_SHA" || echo "")
           LIMITED_DIFF=$(echo "$PR_DIFF" | head -n 500)
-          # Escape the diff for JSON embedding
-          ESCAPED_DIFF=$(echo "$LIMITED_DIFF" | jq -sR .)
-          echo "diff=$ESCAPED_DIFF" >> $GITHUB_OUTPUT
+          # Output raw limited diff using heredoc for GITHUB_OUTPUT
+          echo 'diff<<EOF' >> $GITHUB_OUTPUT
+          echo "$LIMITED_DIFF" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Prepare Input Data
         id: input_data
@@ -52,60 +59,66 @@ jobs:
           TAGS_JSON="[]" # Default empty JSON array for tags
           IS_BREAKING_CHANGE="false" # Default breaking change to false
 
-          if [[ "$PR_TITLE_RAW" =~ $REGEX ]]; then
-            TYPE="${BASH_REMATCH[1]}"
+          if [[ "${PR_TITLE_RAW}" =~ $REGEX ]]; then
+                        TYPE="${BASH_REMATCH[1]}"
             SCOPE="${BASH_REMATCH[3]}"
-            BREAKING_INDICATOR="${BASH_REMATCH[4]}" # Group 4 captures !
-            echo "Parsed Type: $TYPE"
-            TAGS_JSON="[\"$TYPE\"" # Add type tag
-            if [[ -n "$SCOPE" ]]; then
-              echo "Parsed Scope: $SCOPE"
-              TAGS_JSON="$TAGS_JSON, \"$SCOPE\"" # Add scope tag if present
-            fi
-            TAGS_JSON="$TAGS_JSON]" # Close JSON array
-
-            # Check for breaking change indicator (!)
-            if [[ "$BREAKING_INDICATOR" == "!" ]]; then
-              echo "Breaking change detected in title (!)"
-              IS_BREAKING_CHANGE="true"
-            fi
-          else
-            echo "PR title '$PR_TITLE_RAW' does not match Conventional Commit format."
+            BREAKING_INDICATOR="${BASH_REMATCH[4]}"
+            TAGS_JSON="[\"$TYPE\""
+            if [[ -n "$SCOPE" ]]; then TAGS_JSON="$TAGS_JSON, \"$SCOPE\""; fi
+            TAGS_JSON="$TAGS_JSON]"
+            if [[ "$BREAKING_INDICATOR" == "!" ]]; then IS_BREAKING_CHANGE="true"; fi
           fi
-          echo "Generated Tags JSON: $TAGS_JSON"
-          echo "Is Breaking Change: $IS_BREAKING_CHANGE"
+          echo "Debug - Tags JSON String: $TAGS_JSON"
+          echo "Debug - Is Breaking: $IS_BREAKING_CHANGE"
 
-          # Use env vars $PR_TITLE_RAW and $PR_BODY_RAW
-          PR_TITLE_ESCAPED=$(echo "$PR_TITLE_RAW" | jq -sR .)
-          if [[ -z "$PR_BODY_RAW" ]]; then PR_BODY_ESCAPED="null"; else PR_BODY_ESCAPED=$(echo "$PR_BODY_RAW" | jq -sR .); fi
-          PR_DIFF_ESCAPED="${{ steps.diff.outputs.diff }}" # Already escaped
+          # --- Output RAW values (or null string for body) ---
+          # Use heredoc for multi-line safety
+          echo 'pr_title<<EOF' >> "$GITHUB_OUTPUT"
+          echo "$PR_TITLE_RAW" >> "$GITHUB_OUTPUT"
+          echo 'EOF' >> "$GITHUB_OUTPUT"
 
-          echo "pr_title=$PR_TITLE_ESCAPED" >> $GITHUB_OUTPUT
-          echo "pr_body=$PR_BODY_ESCAPED" >> $GITHUB_OUTPUT
-          echo "code_diff=$PR_DIFF_ESCAPED" >> $GITHUB_OUTPUT
-          echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
-          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT # Output boolean string
+          echo 'pr_body<<EOF' >> "$GITHUB_OUTPUT"
+          if [[ -z "$PR_BODY_RAW" ]]; then
+            echo "null" >> "$GITHUB_OUTPUT" # Output literal string "null"
+          else
+            echo "$PR_BODY_RAW" >> "$GITHUB_OUTPUT"
+          fi
+          echo 'EOF' >> "$GITHUB_OUTPUT"
 
+          # Diff is already set by previous step
+
+          echo "tags_json_string=$TAGS_JSON" >> "$GITHUB_OUTPUT" # Note: outputting JSON string
+          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> "$GITHUB_OUTPUT"
       - name: Call Changelog Generation API
+        env:
+          INPUT_PR_TITLE: ${{ steps.input_data.outputs.pr_title }}
+          INPUT_PR_BODY: ${{ steps.input_data.outputs.pr_body }}
+          INPUT_CODE_DIFF: ${{ steps.diff.outputs.diff }}
+          INPUT_TAGS_JSON: ${{ steps.input_data.outputs.tags_json_string }}
+          INPUT_IS_BREAKING: ${{ steps.input_data.outputs.is_breaking_change }}
         run: |
-          # Construct JSON payload including parsed tags and breaking change flag
-          JSON_PAYLOAD=$(cat <<EOF
-          {
-            "pr_title": ${{ steps.input_data.outputs.pr_title }},
-            "pr_body": ${{ steps.input_data.outputs.pr_body }},
-            "code_diff": ${{ steps.input_data.outputs.code_diff }},
-            "tags": ${{ steps.input_data.outputs.tags }},
-            "is_breaking_change": ${{ steps.input_data.outputs.is_breaking_change }},
-            "trigger_type": "pull_request"
-          }
-          EOF
+          JSON_PAYLOAD=$(
+            jq -n \
+              --arg pr_title "$INPUT_PR_TITLE" \
+              --arg pr_body "$INPUT_PR_BODY" \
+              --arg code_diff "$INPUT_CODE_DIFF" \
+              --argjson tags "$INPUT_TAGS_JSON" \
+              --argjson is_breaking "$INPUT_IS_BREAKING" \
+              '{
+                pr_title: $pr_title,
+                pr_body: (if $pr_body == "" or $pr_body == "null" then null else $pr_body end),
+                code_diff: $code_diff,
+                tags: $tags,
+                is_breaking_change: $is_breaking,
+                trigger_type: "pull_request"
+              }'
           )
-          echo "Sending payload to ${{ env.TARGET_API_URL }}/api/changelogs/generate"
-          echo "Payload content (first 100 chars): $(echo $JSON_PAYLOAD | head -c 100)..." # Log snippet
-          # Add -f to fail step if API returns non-2xx status
-          curl -X POST -H "Content-Type: application/json" \
-               -d "$JSON_PAYLOAD" \
-               ${{ env.TARGET_API_URL }}/api/changelogs/generate \
-               --fail
 
+          echo "Sending payload to ${{ env.TARGET_API_URL }}/changelogs/generate"
+          echo "Payload content (first 100 chars): $(echo $JSON_PAYLOAD | head -c 100)..."
+          # Send the jq-generated payload
+          curl -X POST -H "Content-Type: application/json" \
+              -d "$JSON_PAYLOAD" \
+              ${{ env.TARGET_API_URL }}/changelogs/generate \
+              --fail
       # TODO: Add steps for handling API failure if needed

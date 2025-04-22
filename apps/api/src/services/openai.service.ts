@@ -2,13 +2,15 @@ import OpenAI from "openai";
 import fs from "node:fs";
 import path from "node:path";
 import { ChangelogInput } from "../types/changelog.types";
-// TODO: Add more robust error handling for file reading
 let promptTemplate = "Error: Could not load prompt template.";
 try {
 	const promptFilePath = path.join(
 		__dirname,
-		"../prompts/generate_changelog.prompt.txt"
+		"../../prompts/generate_changelog.prompt.txt"
 	);
+	console.log(`Attempting to read prompt from: ${promptFilePath}`);
+	promptTemplate = fs.readFileSync(promptFilePath, "utf-8");
+	console.log("Prompt template loaded successfully.");
 	promptTemplate = fs.readFileSync(promptFilePath, "utf-8");
 } catch (error) {
 	console.error("Error reading prompt file:", error);
