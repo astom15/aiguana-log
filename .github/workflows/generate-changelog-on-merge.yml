@@ -8,7 +8,7 @@ on:
 
 jobs:
   generate_changelog_entry:
-    if: github.event.pull_request.merged == true
+    #if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       TARGET_API_URL: ${{ github.event.pull_request.base.ref == 'master' && vars.PROD_BACKEND_API_URL || github.event.pull_request.base.ref == 'develop' && vars.DEV_BACKEND_API_URL || '' }}
