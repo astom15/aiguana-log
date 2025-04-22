@@ -114,7 +114,7 @@ jobs:
               }'
           )
 
-          echo "Sending payload to ${{ env.TARGET_API_URL }}/api/changelogs/generate"
+          echo "Sending payload to ${{ env.TARGET_API_URL }}/changelogs/generate"
           echo "Payload content (first 100 chars): $(echo $JSON_PAYLOAD | head -c 100)..."
           # Send the jq-generated payload
           curl -X POST -H "Content-Type: application/json" \
