@@ -14,6 +14,9 @@ COPY apps/api/package.json ./apps/api/
 
 COPY apps/shared-types/package.json ./apps/shared-types/
 
+RUN mkdir -p apps/api && mv apps/api_package.json apps/api/package.json
+RUN mkdir -p apps/shared-types && mv shared_types_package.json apps/shared-types/package.json
+
 RUN corepack enable && pnpm install --prod --filter api... --frozen-lockfile
 
 # ---- Runner Stage ----
