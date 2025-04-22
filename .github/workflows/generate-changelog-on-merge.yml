@@ -54,7 +54,7 @@ jobs:
           TAGS_JSON="[]" # Default empty JSON array for tags
           IS_BREAKING_CHANGE="false" # Default breaking change to false
 
-          if [[ "$PR_TITLE_RAW" =~ $REGEX ]]; then
+          if [[ "${PR_TITLE_RAW}" =~ $REGEX ]]; then
             TYPE="${BASH_REMATCH[1]}"
             SCOPE="${BASH_REMATCH[3]}"
             BREAKING_INDICATOR="${BASH_REMATCH[4]}" # Group 4 captures !
@@ -82,11 +82,13 @@ jobs:
           if [[ -z "$PR_BODY_RAW" ]]; then PR_BODY_ESCAPED="null"; else PR_BODY_ESCAPED=$(echo "$PR_BODY_RAW" | jq -sR .); fi
           PR_DIFF_ESCAPED="${{ steps.diff.outputs.diff }}" # Already escaped
 
-          echo "pr_title=$PR_TITLE_ESCAPED" >> $GITHUB_OUTPUT
-          echo "pr_body=$PR_BODY_ESCAPED" >> $GITHUB_OUTPUT
-          echo "code_diff=$PR_DIFF_ESCAPED" >> $GITHUB_OUTPUT
-          echo "tags=$TAGS_JSON" >> $GITHUB_OUTPUT
-          echo "is_breaking_change=$IS_BREAKING_CHANGE" >> $GITHUB_OUTPUT # Output boolean string
+          {
+            echo "pr_title=$PR_TITLE_ESCAPED"
+            echo "pr_body=$PR_BODY_ESCAPED"
+            echo "code_diff=$PR_DIFF_ESCAPED"
+            echo "tags=$TAGS_JSON"
+            echo "is_breaking_change=$IS_BREAKING_CHANGE"
+          } >> "$GITHUB_OUTPUT"
         shell: bash
 
       - name: Call Changelog Generation API
