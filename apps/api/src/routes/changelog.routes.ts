@@ -46,7 +46,7 @@ export default async function changelogRoutes(
 					.find(
 						{ status: Status.PUBLISHED },
 						{
-							sort: { generatedAt: 1 },
+							sort: { generatedAt: -1 },
 							limit: 10,
 						}
 					)
