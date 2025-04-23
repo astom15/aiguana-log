@@ -4,16 +4,29 @@ import path from "node:path";
 import { ChangelogInput } from "../types/changelog.types";
 let promptTemplate = "Error: Could not load prompt template.";
 try {
+	let baseDir: string;
+	if (__filename.includes(path.sep + "dist" + path.sep)) {
+		// Running from compiled code in container/deployment
+		baseDir = path.join(__dirname, "../../");
+		console.log("Detected running from dist, baseDir:", baseDir);
+	} else {
+		// Running locally via ts-node
+		baseDir = path.join(__dirname, "../../../");
+		console.log("Detected running from src, baseDir:", baseDir);
+	}
+
 	const promptFilePath = path.join(
-		__dirname,
-		"../../prompts/generate_changelog.prompt.txt"
+		baseDir,
+		"prompts/generate_changelog.prompt.txt"
 	);
+
 	console.log(`Attempting to read prompt from: ${promptFilePath}`);
 	promptTemplate = fs.readFileSync(promptFilePath, "utf-8");
 	console.log("Prompt template loaded successfully.");
-	promptTemplate = fs.readFileSync(promptFilePath, "utf-8");
 } catch (error) {
-	console.error("Error reading prompt file:", error);
+	console.error("Error reading prompt file in openai.service.ts:", error);
+	console.error(`Current working directory: ${process.cwd()}`);
+	console.error(`__dirname: ${__dirname}`);
 }
 
 export async function generateChangelog(
