@@ -11,7 +11,6 @@ export interface ChangelogEntry {
 	status: Status;
 	triggerType: TriggerType;
 	generatedAt: Date;
-	publishedAt?: Date | null;
 	author?: string | null;
 	breaking_change?: boolean;
 	aiModelUsed?: string;

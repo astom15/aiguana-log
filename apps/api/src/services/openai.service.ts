@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ChangelogInput } from "../types/changelog.types";
 let promptTemplate = "Error: Could not load prompt template.";
+// i know this is hacky but its a stopgap
 try {
 	let baseDir: string;
 	if (__filename.includes(path.sep + "dist" + path.sep)) {

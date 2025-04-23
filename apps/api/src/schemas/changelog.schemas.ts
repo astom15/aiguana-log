@@ -23,6 +23,7 @@ export const getIdParamsSchema = z.object({
 export const changelogResponseSchema = z.object({
 	_id: z.instanceof(ObjectId).transform((id) => id.toString()),
 	title: z.string(),
+	summary: z.string(),
 	description: z.string(),
 	commitShas: z.array(z.string()),
 	pullRequestUrl: z.string().nullable(),
@@ -32,10 +33,6 @@ export const changelogResponseSchema = z.object({
 	generatedAt: z
 		.date()
 		.transform((date) => (date instanceof Date ? date.toISOString() : date)),
-	publishedAt: z
-		.date()
-		.nullable()
-		.transform((date) => (date ? date.toISOString() : null)),
 	author: z.string().nullable(),
 	breaking_change: z.boolean(),
 });

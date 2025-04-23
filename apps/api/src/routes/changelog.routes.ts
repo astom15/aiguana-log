@@ -46,10 +46,8 @@ export default async function changelogRoutes(
 					.find(
 						{ status: Status.PUBLISHED },
 						{
-							sort: { publishedAt: -1 },
+							sort: { generatedAt: 1 },
 							limit: 10,
-							// Optionally add projection to exclude fields not needed for the list view
-							// projection: { description: 0, commitShas: 0, ... }
 						}
 					)
 					.toArray();
@@ -137,7 +135,6 @@ export default async function changelogRoutes(
 					status: Status.DRAFT,
 					triggerType: trigger_type,
 					generatedAt: new Date(),
-					publishedAt: null,
 					author: null, // TODO: Populate from input or trigger context
 					breaking_change: is_breaking_change,
 				};

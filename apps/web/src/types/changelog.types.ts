@@ -3,6 +3,7 @@ import { Status, TriggerType } from "../../../shared-types/src";
 export interface SerializedChangelogEntry {
 	_id: string;
 	title: string;
+	summary: string;
 	description: string;
 	commitShas: string[];
 	pullRequestUrl?: string | null;
@@ -10,7 +11,6 @@ export interface SerializedChangelogEntry {
 	status: Status;
 	triggerType: TriggerType;
 	generatedAt: string;
-	publishedAt?: string | null;
 	author?: string | null;
 	breaking_change?: boolean;
 }
