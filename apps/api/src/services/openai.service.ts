@@ -40,14 +40,13 @@ export async function generateChangelog(
 	let prompt = promptTemplate;
 	prompt = prompt.replace("{{pr_title}}", input.prTitle || "N/A");
 	prompt = prompt.replace("{{pr_body}}", input.prBody || "N/A");
-	prompt = prompt.replace("{{code_diff}}", input.codeDiff || "N/A");
 
 	try {
 		const completion = await openaiClient.chat.completions.create({
 			model: "gpt-4o-mini",
 			messages: [{ role: "user", content: prompt }],
 			temperature: 0.5,
-			max_tokens: 300,
+			max_tokens: 500,
 			response_format: { type: "json_object" },
 		});
 

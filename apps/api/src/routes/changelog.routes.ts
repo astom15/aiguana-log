@@ -107,21 +107,14 @@ export default async function changelogRoutes(
 			reply: FastifyReply
 		) => {
 			try {
-				const {
-					pr_title,
-					pr_body,
-					code_diff,
-					tags,
-					trigger_type,
-					is_breaking_change,
-				} = request.body;
+				const { pr_title, pr_body, tags, trigger_type, is_breaking_change } =
+					request.body;
 
 				const { title, summary, description } = await generateChangelog(
 					fastify.openai,
 					{
 						prTitle: pr_title,
 						prBody: pr_body || null,
-						codeDiff: code_diff || undefined,
 						tags: tags || [],
 					}
 				);

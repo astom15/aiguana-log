@@ -7,8 +7,5 @@ PR Title:
 PR Body:
 {{pr_body}}
 
-Code Diff Summary:
-{{code_diff}}
-
 Tags:
 {{tags}}

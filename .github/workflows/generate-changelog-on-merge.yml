@@ -31,21 +31,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get PR Diff
-        id: diff
-        run: |
-          BASE_SHA=$(echo "${{ github.event.pull_request.base.sha }}")
-          HEAD_SHA=$(echo "${{ github.event.pull_request.head.sha }}")
-          echo "Base SHA: $BASE_SHA"
-          echo "Head SHA (Merge Commit): $HEAD_SHA"
-          # Output raw diff, limit size
-          # Use process substitution and handle potential empty diff
-          PR_DIFF=$(git diff --stat=1000 --unified=0 "$BASE_SHA" "$HEAD_SHA" || echo "")
-          LIMITED_DIFF=$(echo "$PR_DIFF" | head -n 500)
-          # Output raw limited diff using heredoc for GITHUB_OUTPUT
-          echo 'diff<<EOF' >> $GITHUB_OUTPUT
-          echo "$LIMITED_DIFF" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+      # - name: Get PR Diff
+      #   id: diff
+      #   run: |
+      #     BASE_SHA=$(echo "${{ github.event.pull_request.base.sha }}")
+      #     HEAD_SHA=$(echo "${{ github.event.pull_request.head.sha }}")
+      #     echo "Base SHA: $BASE_SHA"
+      #     echo "Head SHA (Merge Commit): $HEAD_SHA"
+      #     # Output raw diff, limit size
+      #     # Use process substitution and handle potential empty diff
+      #     PR_DIFF=$(git diff --stat=1000 --unified=0 "$BASE_SHA" "$HEAD_SHA" || echo "")
+      #     LIMITED_DIFF=$(echo "$PR_DIFF" | head -n 500)
+      #     # Output raw limited diff using heredoc for GITHUB_OUTPUT
+      #     echo 'diff<<EOF' >> $GITHUB_OUTPUT
+      #     echo "$LIMITED_DIFF" >> $GITHUB_OUTPUT
+      #     echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Prepare Input Data
         id: input_data
@@ -54,7 +54,6 @@ jobs:
           PR_BODY_RAW: ${{ github.event.pull_request.body }}
         run: |
           # --- Parse PR Title for Conventional Commit Info ---
-          # Use env var PR_TITLE_RAW
           REGEX="^([a-z]+)(\(([^)]+)\))?(!)?:(.*)$"
           TAGS_JSON="[]" # Default empty JSON array for tags
           IS_BREAKING_CHANGE="false" # Default breaking change to false
@@ -71,8 +70,6 @@ jobs:
           echo "Debug - Tags JSON String: $TAGS_JSON"
           echo "Debug - Is Breaking: $IS_BREAKING_CHANGE"
 
-          # --- Output RAW values (or null string for body) ---
-          # Use heredoc for multi-line safety
           echo 'pr_title<<EOF' >> "$GITHUB_OUTPUT"
           echo "$PR_TITLE_RAW" >> "$GITHUB_OUTPUT"
           echo 'EOF' >> "$GITHUB_OUTPUT"
@@ -85,15 +82,13 @@ jobs:
           fi
           echo 'EOF' >> "$GITHUB_OUTPUT"
 
-          # Diff is already set by previous step
-
-          echo "tags_json_string=$TAGS_JSON" >> "$GITHUB_OUTPUT" # Note: outputting JSON string
+          echo "tags_json_string=$TAGS_JSON" >> "$GITHUB_OUTPUT"
           echo "is_breaking_change=$IS_BREAKING_CHANGE" >> "$GITHUB_OUTPUT"
+
       - name: Call Changelog Generation API
         env:
           INPUT_PR_TITLE: ${{ steps.input_data.outputs.pr_title }}
           INPUT_PR_BODY: ${{ steps.input_data.outputs.pr_body }}
-          INPUT_CODE_DIFF: ${{ steps.diff.outputs.diff }}
           INPUT_TAGS_JSON: ${{ steps.input_data.outputs.tags_json_string }}
           INPUT_IS_BREAKING: ${{ steps.input_data.outputs.is_breaking_change }}
         run: |
@@ -101,13 +96,11 @@ jobs:
             jq -n \
               --arg pr_title "$INPUT_PR_TITLE" \
               --arg pr_body "$INPUT_PR_BODY" \
-              --arg code_diff "$INPUT_CODE_DIFF" \
               --argjson tags "$INPUT_TAGS_JSON" \
               --argjson is_breaking "$INPUT_IS_BREAKING" \
               '{
                 pr_title: $pr_title,
                 pr_body: (if $pr_body == "" or $pr_body == "null" then null else $pr_body end),
-                code_diff: $code_diff,
                 tags: $tags,
                 is_breaking_change: $is_breaking,
                 trigger_type: "pull_request"

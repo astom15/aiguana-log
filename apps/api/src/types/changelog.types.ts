@@ -36,6 +36,5 @@ export interface ApiError {
 export interface ChangelogInput {
 	prTitle: string;
 	prBody: string | null;
-	codeDiff: string | undefined;
 	tags: string[];
 }
