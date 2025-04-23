@@ -20,6 +20,19 @@ Also, I used Gemini and sometimes Cursor if it was something minor I had a quick
 
 # How to run the app:
 
+### Short way:
+
+1. git clone git@github.com:astom15/aiguana-log.git
+2. git checkout -b `<new-branch>`
+3. make a non-breaking random git commit
+4. create a pr to merge into develop or master.
+   - write whatever you want in the description.
+   - title formatted as : &lt;type&gt;(&lt;tag(s)&gt;)(! for possible breaking change): &lt;title&gt;
+   - EX: feat(ui, api)!: updated changelog entry type
+5. merge!
+6. if you merged onto master, check https://aiguana-log.web.app/ for the new changelog
+7. and if you merged onto develop, check https://aiguana-log-dev.web.app/ for the new changelog
+
 ### Long way:
 
 1. git clone git@github.com:astom15/aiguana-log.git
@@ -42,15 +55,3 @@ Also, I used Gemini and sometimes Cursor if it was something minor I had a quick
    - NEXT_PUBLIC_API_URL: http://localhost:3001/api
 9. pnpm dev from root
 
-### Short way:
-
-1. git clone git@github.com:astom15/aiguana-log.git
-2. git checkout -b `<new-branch>`
-3. make a non-breaking random git commit
-4. create a pr to merge into develop or master.
-   - write whatever you want in the description.
-   - title formatted as : &lt;type&gt;(&lt;tag(s)&gt;)(! for possible breaking change): &lt;title&gt;
-   - EX: feat(ui, api)!: updated changelog entry type
-5. merge!
-6. if you merged onto master, check https://aiguana-log.web.app/ for the new changelog
-7. and if you merged onto develop, check https://aiguana-log-dev.web.app/ for the new changelog
