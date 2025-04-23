@@ -124,7 +124,7 @@ export default async function changelogRoutes(
 					commitShas: [], // TODO: Populate from input or trigger context
 					pullRequestUrl: null, // TODO: Populate from input or trigger context
 					tags: tags, // Example tag
-					status: Status.DRAFT,
+					status: Status.PUBLISHED,
 					triggerType: trigger_type,
 					generatedAt: new Date(),
 					author: null, // TODO: Populate from input or trigger context
