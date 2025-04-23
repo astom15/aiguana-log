@@ -104,14 +104,12 @@ jobs:
               --arg code_diff "$INPUT_CODE_DIFF" \
               --argjson tags "$INPUT_TAGS_JSON" \
               --argjson is_breaking "$INPUT_IS_BREAKING" \
-              --arg published_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
               '{
                 pr_title: $pr_title,
                 pr_body: (if $pr_body == "" or $pr_body == "null" then null else $pr_body end),
                 code_diff: $code_diff,
                 tags: $tags,
                 is_breaking_change: $is_breaking,
-                published_at: $published_at,
                 trigger_type: "pull_request"
               }'
           )
