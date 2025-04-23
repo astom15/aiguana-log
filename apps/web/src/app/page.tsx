@@ -59,16 +59,18 @@ export default function ChangelogPage() {
 					try {
 						const errorData = await response.json();
 						errorMsg = errorData.message || errorMsg;
-					} catch (jsonError) {
-						/* Ignore */
-					}
+					} catch (_err) {}
 					throw new Error(errorMsg);
 				}
 				const data: SerializedChangelogEntry[] = await response.json();
 				setChangelogs(data);
-			} catch (e: any) {
-				console.error("Failed to fetch changelogs:", e);
-				setError(e.message || "Failed to load changelogs.");
+			} catch (e: unknown) {
+				if (e instanceof Error) {
+					console.error("Failed to fetch changelogs:", e);
+					setError(e.message || "Failed to load changelogs.");
+				} else {
+					setError("An unknown error occurred.");
+				}
 			} finally {
 				setIsLoading(false);
 			}
