@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginOptions } from "fastify";
 import fp from "fastify-plugin";
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, MongoClientOptions } from "mongodb";
 
 // export interface MongoDbPluginOptions {}
 
@@ -21,9 +21,12 @@ async function mongoDbPlugin(
 	}
 
 	const dbName = fastify.config.MONGODB_DB_NAME;
+	const clientOptions: MongoClientOptions = {
+		serverSelectionTimeoutMS: 30000,
+		connectTimeoutMS: 30000,
+	};
 
-	const mongoClient = new MongoClient(mongoUri);
-
+	const mongoClient = new MongoClient(mongoUri, clientOptions);
 	try {
 		await mongoClient.connect();
 		fastify.log.info("MongoDB client connected successfully.");
