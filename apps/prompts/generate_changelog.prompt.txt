@@ -1,4 +1,4 @@
-Based on the following Pull Request information, generate a user-friendly changelog title (plain text, concise) and a detailed changelog description (using Markdown format, potentially with bullet points).
+Based on the following Pull Request information, generate a user-friendly changelog title (plain text, concise) and a detailed changelog description (using Markdown format, potentially with bullet points, and each sentence should end in a period.).
 Respond ONLY with a valid JSON object containing the keys "generated_title" and "markdown_description". Do not include any other text, explanations, or formatting before or after the JSON object.
 
 PR Title:
