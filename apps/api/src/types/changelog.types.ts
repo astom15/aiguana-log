@@ -31,3 +31,9 @@ export interface ApiError {
 	code?: string;
 	statusCode?: number;
 }
+
+export interface ChangelogInput {
+	prTitle: string;
+	prBody: string | null;
+	tags: string[];
+}

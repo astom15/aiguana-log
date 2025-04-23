@@ -1,5 +1,0 @@
-Generate a concise changelog title and a short description (1-2 sentences) based on the following input.
-Respond ONLY with a valid JSON object containing the keys "title" and "description". Do not include any other text, explanations, or markdown formatting before or after the JSON object.
-
-Input:
-{{raw_input}}

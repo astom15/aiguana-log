@@ -61,7 +61,6 @@ export default function ChangelogPage() {
 							No published changelog entries found.
 						</p>
 					) : (
-						// Use the specific SerializedChangelogEntry type for the mapped entry
 						changelogs.map((entry: SerializedChangelogEntry) => (
 							<div
 								key={entry._id}
@@ -70,9 +69,9 @@ export default function ChangelogPage() {
 								<h2 className="text-2xl font-semibold mb-2">
 									{entry.title ?? "Untitled"}
 								</h2>
-								{entry.publishedAt && (
+								{entry.generatedAt && (
 									<p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-										Published on: {formatDate(entry.publishedAt)}
+										Published on: {formatDate(entry.generatedAt)}
 									</p>
 								)}
 								<p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-4">

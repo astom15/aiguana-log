@@ -10,7 +10,6 @@ export interface SerializedChangelogEntry {
 	status: Status;
 	triggerType: TriggerType;
 	generatedAt: string;
-	publishedAt?: string | null;
 	author?: string | null;
 	breaking_change?: boolean;
 }

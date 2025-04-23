@@ -13,9 +13,9 @@ import {
 	GetIdParams,
 	getIdParamsSchema,
 } from "../schemas/changelog.schemas";
-import { ChangelogEntry, Status } from "../../../shared-types/src";
 import { ObjectId } from "mongodb";
 import { generateChangelog } from "../services/openai.service";
+import { ChangelogEntry, Status } from "../types/changelog.types";
 
 /**
  * @param fastify - The Fastify instance.
@@ -46,10 +46,8 @@ export default async function changelogRoutes(
 					.find(
 						{ status: Status.PUBLISHED },
 						{
-							sort: { publishedAt: -1 },
+							sort: { generatedAt: 1 },
 							limit: 10,
-							// Optionally add projection to exclude fields not needed for the list view
-							// projection: { description: 0, commitShas: 0, ... }
 						}
 					)
 					.toArray();
@@ -109,29 +107,28 @@ export default async function changelogRoutes(
 			reply: FastifyReply
 		) => {
 			try {
-				const { raw_input, trigger_type } = request.body;
+				const { pr_title, pr_body, tags, trigger_type, is_breaking_change } =
+					request.body;
 
-				// --- Restore Original Placeholder Logic ---
-				// TODO: Step 13 - Integrate AI call using raw_input
-				// TODO: Refine input handling (parse commits, PR data etc.)
-				// TODO: Determine title, tags, breaking_change more intelligently
-
-				const { title, description } = await generateChangelog(
+				const { generatedTitle, markdownDescription } = await generateChangelog(
 					fastify.openai,
-					raw_input
+					{
+						prTitle: pr_title,
+						prBody: pr_body || null,
+						tags: tags || [],
+					}
 				);
 				const newEntry: Omit<ChangelogEntry, "_id"> = {
-					title,
-					description,
+					title: generatedTitle,
+					description: markdownDescription,
 					commitShas: [], // TODO: Populate from input or trigger context
 					pullRequestUrl: null, // TODO: Populate from input or trigger context
-					tags: [trigger_type], // Example tag
+					tags: tags, // Example tag
 					status: Status.DRAFT,
-					triggerType: trigger_type, // Assign the validated enum string value
+					triggerType: trigger_type,
 					generatedAt: new Date(),
-					publishedAt: null,
 					author: null, // TODO: Populate from input or trigger context
-					breaking_change: false, // TODO: Determine from input (e.g., Conventional Commits)
+					breaking_change: is_breaking_change,
 				};
 				const result = await changelogsCollection.insertOne(
 					newEntry as ChangelogEntry
@@ -164,8 +161,4 @@ export default async function changelogRoutes(
 			}
 		}
 	);
-	// POST /generate
-	// GET /:id
-	// PUT /:id
-	// etc.
 }

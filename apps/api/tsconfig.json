@@ -5,12 +5,11 @@
 		"composite": true,
 		"outDir": "./dist",
 		"rootDir": "./src",
+		"declaration": true,
+
 		"module": "CommonJS",
-		"baseUrl": ".",
-		"declaration": true
+		"baseUrl": "."
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"],
-
-	"references": [{ "path": "../shared-types" }]
+	"exclude": ["node_modules", "dist"]
 }

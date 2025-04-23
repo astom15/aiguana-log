@@ -1,9 +1,12 @@
 import { z } from "zod";
-import { Status, TriggerType } from "../../../shared-types/src";
 import { ObjectId } from "mongodb";
+import { TriggerType, Status } from "../types/changelog.types";
 
 export const generateChangelogBodySchema = z.object({
-	raw_input: z.string().min(1, { message: "Raw input is required" }),
+	pr_title: z.string().min(1, { message: "PR title cannot be empty" }),
+	pr_body: z.string().nullable().optional(),
+	tags: z.array(z.string()).optional().default([]),
+	is_breaking_change: z.boolean().optional().default(false),
 	trigger_type: z.nativeEnum(TriggerType).default(TriggerType.MANUAL),
 });
 
@@ -28,10 +31,6 @@ export const changelogResponseSchema = z.object({
 	generatedAt: z
 		.date()
 		.transform((date) => (date instanceof Date ? date.toISOString() : date)),
-	publishedAt: z
-		.date()
-		.nullable()
-		.transform((date) => (date ? date.toISOString() : null)),
 	author: z.string().nullable(),
 	breaking_change: z.boolean(),
 });
