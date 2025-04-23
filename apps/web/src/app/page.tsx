@@ -162,14 +162,14 @@ export default function ChangelogPage() {
 									</div>
 									<div className="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
 										{entry.breaking_change && (
-											<span className="flex items-center bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-red-300 border border-red-300 dark:border-red-600">
+											<span className="flex items-center bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-red-900 dark:text-white border border-red-300 dark:border-red-600">
 												<AlertTriangleIcon /> Breaking Change
 											</span>
 										)}
 										{entry.tags?.map((tag: string) => (
 											<span
 												key={tag}
-												className="flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300 border border-green-300 dark:border-green-600"
+												className="flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-white border border-green-300 dark:border-green-600"
 											>
 												<TagIcon /> {tag}
 											</span>
