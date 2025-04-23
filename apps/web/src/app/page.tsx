@@ -59,7 +59,7 @@ export default function ChangelogPage() {
 					try {
 						const errorData = await response.json();
 						errorMsg = errorData.message || errorMsg;
-					} catch (_err) {
+					} catch {
 						/* Ignore */
 					}
 					throw new Error(errorMsg);
