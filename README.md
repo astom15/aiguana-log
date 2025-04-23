@@ -15,6 +15,7 @@ Also, I used Gemini and sometimes Cursor if it was something minor I had a quick
 - as mentioned above, use Git diff as context and release one changelog after multiple PRs
 - add eval and tracing via Weave
 - filter on tags or breaking changes in the UI
+- home page has cards with short summaries, clicking on a card takes you to the full description. would've been better with more context.
 - made it model agnostic, currently only works with OpenAI
 
 # How to run the app:
