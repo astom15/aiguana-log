@@ -110,7 +110,7 @@ export default async function changelogRoutes(
 				const { pr_title, pr_body, tags, trigger_type, is_breaking_change } =
 					request.body;
 
-				const { title, summary, description } = await generateChangelog(
+				const { generatedTitle, markdownDescription } = await generateChangelog(
 					fastify.openai,
 					{
 						prTitle: pr_title,
@@ -119,9 +119,8 @@ export default async function changelogRoutes(
 					}
 				);
 				const newEntry: Omit<ChangelogEntry, "_id"> = {
-					title,
-					summary,
-					description,
+					title: generatedTitle,
+					description: markdownDescription,
 					commitShas: [], // TODO: Populate from input or trigger context
 					pullRequestUrl: null, // TODO: Populate from input or trigger context
 					tags: tags, // Example tag

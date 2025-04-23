@@ -33,7 +33,7 @@ try {
 export async function generateChangelog(
 	openaiClient: OpenAI,
 	input: ChangelogInput
-): Promise<{ title: string; summary: string; description: string }> {
+): Promise<{ generatedTitle: string; markdownDescription: string }> {
 	if (promptTemplate.startsWith("Error:")) {
 		throw new Error("Prompt template could not be loaded.");
 	}
@@ -46,47 +46,46 @@ export async function generateChangelog(
 			model: "gpt-4o-mini",
 			messages: [{ role: "user", content: prompt }],
 			temperature: 0.5,
-			max_tokens: 500,
+			max_tokens: 400,
 			response_format: { type: "json_object" },
 		});
 
-		if (!completion?.choices?.[0]?.message?.content) {
-			throw new Error("OpenAI response was incomplete or empty");
-		}
+		const content = completion.choices[0]?.message?.content;
 
-		const content = completion.choices[0].message.content;
 		if (!content) {
 			console.warn("OpenAI response content was empty.");
 			throw new Error("AI returned empty content.");
 		}
-		// TODO: Implement more robust parsing
+
 		try {
 			const parsedResponse = JSON.parse(content);
 			if (
-				typeof parsedResponse.title === "string" &&
-				typeof parsedResponse.summary === "string" &&
-				typeof parsedResponse.description === "string"
+				typeof parsedResponse.generated_title === "string" &&
+				typeof parsedResponse.markdown_description === "string"
 			) {
 				return {
-					title: parsedResponse.title.trim(),
-					summary: parsedResponse.summary.trim(),
-					description: parsedResponse.description.trim(),
+					generatedTitle: parsedResponse.generated_title.trim(),
+					markdownDescription: parsedResponse.markdown_description.trim(),
 				};
 			} else {
 				console.error(
-					"Parsed JSON response missing title, summary, or description string fields:",
+					"Parsed JSON response missing generated_title or markdown_description string fields:",
 					parsedResponse
 				);
 				throw new Error(
-					"Parsed JSON response missing title, summary, or description string fields."
+					"Parsed JSON response missing generated_title or markdown_description string fields."
 				);
 			}
 		} catch (parseError) {
-			console.error(parseError, "Failed to parse JSON response from OpenAI");
-			throw new Error("AI returned non-json or malformed content");
+			console.error(
+				parseError,
+				"Failed to parse JSON response from OpenAI. Content:",
+				content
+			);
+			throw new Error(`AI returned non-JSON or malformed content.`);
 		}
 	} catch (aiError: any) {
-		console.error(aiError, "OpenAI api call failed");
+		console.error(aiError, "OpenAI API call failed");
 		throw new Error(
 			`OpenAI API call failed: ${aiError?.message || "Unknown AI error"}`
 		);

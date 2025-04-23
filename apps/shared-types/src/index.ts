@@ -3,7 +3,6 @@ import { ObjectId } from "mongodb";
 export interface ChangelogEntry {
 	_id: ObjectId;
 	title: string;
-	summary: string;
 	description: string;
 	commitShas: string[];
 	pullRequestUrl?: string | null;

@@ -75,7 +75,7 @@ export default function ChangelogPage() {
 									</p>
 								)}
 								<p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-4">
-									{entry.summary ?? "No summary."}
+									{entry.description ?? "No description."}
 								</p>
 								<div className="flex flex-wrap gap-2">
 									{entry.breaking_change && (

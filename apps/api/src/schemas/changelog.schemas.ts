@@ -22,7 +22,6 @@ export const getIdParamsSchema = z.object({
 export const changelogResponseSchema = z.object({
 	_id: z.instanceof(ObjectId).transform((id) => id.toString()),
 	title: z.string(),
-	summary: z.string(),
 	description: z.string(),
 	commitShas: z.array(z.string()),
 	pullRequestUrl: z.string().nullable(),

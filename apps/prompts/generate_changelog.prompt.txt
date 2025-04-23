@@ -1,5 +1,5 @@
-Generate a concise changelog title, a short summary (1-4 sentences), and a full description based on the following Pull Request information.
-Respond ONLY with a valid JSON object containing the keys "title", "summary", and "description". Do not include any other text, explanations, or markdown formatting before or after the JSON object.
+Based on the following Pull Request information, generate a user-friendly changelog title (plain text, concise) and a detailed changelog description (using Markdown format, potentially with bullet points).
+Respond ONLY with a valid JSON object containing the keys "generated_title" and "markdown_description". Do not include any other text, explanations, or formatting before or after the JSON object.
 
 PR Title:
 {{pr_title}}
