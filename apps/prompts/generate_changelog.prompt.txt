@@ -1,6 +1,8 @@
-Based on the following Pull Request information, generate a user-friendly changelog title (plain text, concise) and a detailed changelog description (using Markdown format, potentially with bullet points).
-Respond ONLY with a valid JSON object containing the keys "generated_title" and "markdown_description". Do not include any other text, explanations, or formatting before or after the JSON object.
+Based on the following Pull Request information, generate a concise and user-friendly changelog title (plain text), and a clear, natural-sounding changelog description written in Markdown.
 
+The tone should be professional but conversational — avoid overly stiff or robotic phrasing. The description may use bullet points, and each sentence should end in a period. Use natural language that clearly communicates the purpose and impact of the changes.
+
+Respond ONLY with a valid JSON object containing the keys "generated_title" and "markdown_description". Do not include any other text, explanations, or formatting before or after the JSON object.
 PR Title:
 {{pr_title}}
 

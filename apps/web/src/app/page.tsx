@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { SerializedChangelogEntry } from "../types/changelog.types";
 import { formatDate } from "../utils/date.utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const TagIcon = () => (
 	<svg
@@ -154,7 +156,9 @@ export default function ChangelogPage() {
 										)}
 									</div>
 									<div className="prose prose-green dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mb-5">
-										<p>{entry.description ?? "No summary provided."}</p>
+										<ReactMarkdown remarkPlugins={[remarkGfm]}>
+											{entry.description ?? "No description provided."}
+										</ReactMarkdown>
 									</div>
 									<div className="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
 										{entry.breaking_change && (
