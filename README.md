@@ -8,6 +8,8 @@ Heroku was used for the backend and the frontend was hosted on Firebase. Mainly 
 
 Backend deployment is handled with Docker, with the image being built in the CI/CD pipeline to bypass build context issues related to the monorepo. The monorepo was originally chosen to share TS types but due to persistent build failures, I abandoned that in the essence of time and types were duplicated. I went with Fastify over Express because I'd never used it and wanted to try it.
 
+Also, I used Gemini and sometimes Cursor if it was something minor I had a quick question about. Gemini was used a lot to learn about setting up Github Actions and Docker although it did gaslight me a few times. Guess thats on me though for not always asking explicitly enough.
+
 # What I would do if I had more time:
 
 - as mentioned above, use Git diff as context and release one changelog after multiple PRs
